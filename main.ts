@@ -27,6 +27,32 @@ export default class RecurringTasksPlugin extends Plugin {
 
         // Add CSS styles
         this.loadStyles();
+
+        // Register event for file save
+        if (this.settings.updateCompleteTimeOnSave) {
+            this.registerEvent(
+                this.app.vault.on('modify', (file: TFile) => {
+                    if (file && file.extension === 'md') {
+                        this.taskManager.updateCompleteTimeField(file);
+                        
+                        // Also update the UI to hide the button if needed
+                        this.app.workspace.trigger('file-open', file);
+                    }
+                })
+            );
+        }
+
+        // Register event for editor blur
+        if (this.settings.updateCompleteTimeOnBlur) {
+            this.registerEvent(
+                this.app.workspace.on('active-leaf-change', (leaf) => {
+                    const previousFile = this.app.workspace.getActiveFile();
+                    if (previousFile && previousFile.extension === 'md') {
+                        this.taskManager.updateCompleteTimeField(previousFile);
+                    }
+                })
+            );
+        }
     }
 
     async loadSettings() {
@@ -35,6 +61,10 @@ export default class RecurringTasksPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        
+        // Re-register events based on new settings
+        // First, unload current events
+        this.app.workspace.trigger('file-open', this.app.workspace.getActiveFile());
     }
 
     private loadStyles() {

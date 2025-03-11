@@ -13,6 +13,8 @@ export interface RecurringTasksSettings {
     completionHeading: string;
     completionPosition: 'top' | 'bottom';
     dateTimeFormat: string;
+    updateCompleteTimeOnSave: boolean;  // New setting
+    updateCompleteTimeOnBlur: boolean;  // New setting
 }
 
 export const DEFAULT_SETTINGS: RecurringTasksSettings = {
@@ -25,7 +27,9 @@ export const DEFAULT_SETTINGS: RecurringTasksSettings = {
     recurProperty: 'Recur',
     completionHeading: 'Completions',
     completionPosition: 'bottom',
-    dateTimeFormat: 'YYYY-MM-DDTHH:mm:ssZ'
+    dateTimeFormat: 'YYYY-MM-DDTHH:mm:ssZ',
+    updateCompleteTimeOnSave: true,     // Default to true
+    updateCompleteTimeOnBlur: false     // Default to false
 };
 
 export class RecurringTasksSettingTab extends PluginSettingTab {
@@ -142,6 +146,26 @@ export class RecurringTasksSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.dateTimeFormat)
                 .onChange(async (value) => {
                     this.plugin.settings.dateTimeFormat = value;
+                    await this.plugin.saveSettings();
+                }));
+                
+        new Setting(containerEl)
+            .setName('Update CompleteTime on Save')
+            .setDesc('Automatically update the CompleteTime field when a task is saved')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.updateCompleteTimeOnSave)
+                .onChange(async (value) => {
+                    this.plugin.settings.updateCompleteTimeOnSave = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Update CompleteTime on Blur')
+            .setDesc('Automatically update the CompleteTime field when switching away from a task')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.updateCompleteTimeOnBlur)
+                .onChange(async (value) => {
+                    this.plugin.settings.updateCompleteTimeOnBlur = value;
                     await this.plugin.saveSettings();
                 }));
     }

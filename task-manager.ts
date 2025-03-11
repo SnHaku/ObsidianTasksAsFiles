@@ -150,4 +150,47 @@ export class TaskManager {
         
         new Notice('Task completed and due date updated.');
     }
+
+    async updateCompleteTimeField(file: TFile): Promise<void> {
+        // Get the current content and frontmatter
+        const content = await this.app.vault.read(file);
+        const metadata = this.app.metadataCache.getFileCache(file);
+        
+        if (!metadata || !metadata.frontmatter) {
+            return;
+        }
+        
+        const frontmatter = metadata.frontmatter;
+        const doneProperty = this.settings.doneProperty;
+        const completeTimeProperty = this.settings.completeTimeProperty;
+        
+        // Check if it's a task
+        const isTask = isNoteATask(
+            frontmatter, 
+            this.settings.taskTypeProperty, 
+            this.settings.taskTypeSingularProperty, 
+            this.settings.taskTypeValue
+        );
+        
+        if (!isTask) {
+            return;
+        }
+        
+        // Get the current done status
+        const isDone = frontmatter[doneProperty] === true;
+        
+        // Update the CompleteTime field based on the done status
+        let updatedContent: string;
+        if (isDone) {
+            // Set CompleteTime to current time
+            const now = moment().format();
+            updatedContent = updateFrontmatterProperty(content, completeTimeProperty, now);
+        } else {
+            // Clear the CompleteTime field
+            updatedContent = updateFrontmatterProperty(content, completeTimeProperty, '');
+        }
+        
+        // Save the updated content
+        await this.app.vault.modify(file, updatedContent);
+    }
 }
