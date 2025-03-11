@@ -30,18 +30,20 @@ export function addCompletionRecord(
     status: string, 
     heading: string, 
     position: 'top' | 'bottom',
-    dateTimeFormat: string
+    dateTimeFormat: string,
+    completedIndicator: string,
+    skippedIndicator: string
 ): string {
     const headingRegex = new RegExp(`## ${heading}`);
     
     // Format the datetime according to settings
     const formattedDatetime = moment(datetime).format(dateTimeFormat);
     
-    // Convert status to emoji
-    const statusEmoji = status === 'completed' ? '✅' : '⏭️';
+    // Convert status to the configured indicator
+    const statusIndicator = status === 'completed' ? completedIndicator : skippedIndicator;
     
     // New row to add
-    const newRow = `| ${formattedDatetime} | ${statusEmoji} | 1 |`;
+    const newRow = `| ${formattedDatetime} | ${statusIndicator} | 1 |`;
     
     // Check if heading exists
     if (headingRegex.test(content)) {
@@ -86,7 +88,7 @@ export function addCompletionRecord(
                 }
                 
                 // Update the row with the incremented count
-                const updatedRow = `| ${formattedDatetime} | ${statusEmoji} | ${highestCount + 1} |`;
+                const updatedRow = `| ${formattedDatetime} | ${statusIndicator} | ${highestCount + 1} |`;
                 
                 // Insert the new row right after the divider (without adding an extra newline)
                 return content.substring(0, dividerEndPos) + updatedRow + '\n' + content.substring(dividerEndPos);
@@ -95,7 +97,7 @@ export function addCompletionRecord(
                 // Let's rebuild the table properly
                 const newTable = `| Date | Status | # |
 | ---- | ------ | - |
-| ${formattedDatetime} | ${statusEmoji} | 1 |`;
+| ${formattedDatetime} | ${statusIndicator} | 1 |`;
                 
                 // Replace everything from the header line to the next blank line
                 const tableEndPos = content.indexOf('\n\n', tableStartPos);
@@ -116,7 +118,7 @@ export function addCompletionRecord(
             // No table exists yet - create one
             const newTable = `| Date | Status | # |
 | ---- | ------ | - |
-| ${formattedDatetime} | ${statusEmoji} | 1 |`;
+| ${formattedDatetime} | ${statusIndicator} | 1 |`;
             
             // Add the table after the heading
             return [
@@ -130,7 +132,7 @@ export function addCompletionRecord(
         const newContent = `## ${heading}
 | Date | Status | # |
 | ---- | ------ | - |
-| ${formattedDatetime} | ${statusEmoji} | 1 |`;
+| ${formattedDatetime} | ${statusIndicator} | 1 |`;
         
         if (position === 'top') {
             // Add at the top after frontmatter

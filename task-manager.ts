@@ -113,7 +113,9 @@ export class TaskManager {
                 status, 
                 this.settings.completionHeading, 
                 this.settings.completionPosition,
-                this.settings.dateTimeFormat
+                this.settings.dateTimeFormat,
+                this.settings.completedIndicator,  // Add completed indicator
+                this.settings.skippedIndicator     // Add skipped indicator
             );
         }
         
@@ -149,7 +151,9 @@ export class TaskManager {
             'completed', 
             this.settings.completionHeading, 
             this.settings.completionPosition,
-            this.settings.dateTimeFormat
+            this.settings.dateTimeFormat,
+            this.settings.completedIndicator,  // Add completed indicator
+            this.settings.skippedIndicator     // Add skipped indicator
         );
         
         // Save the updated content with completion record
