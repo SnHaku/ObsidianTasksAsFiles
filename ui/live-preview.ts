@@ -1,9 +1,10 @@
 // ui/live-preview.ts
 import { EditorView, ViewPlugin, WidgetType, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
-import { Plugin, TFile, MarkdownView } from 'obsidian';
+import { TFile, MarkdownView } from 'obsidian';
 import { RecurrenceInfo } from '../recurrence-parser';
+import RecurringTasksPlugin from '../main'; // Import the specific plugin class
 
-export function setupLivePreviewExtension(plugin: Plugin) {
+export function setupLivePreviewExtension(plugin: RecurringTasksPlugin) { // Change type to RecurringTasksPlugin
     // Register an event to detect when a file is opened in the editor
     plugin.registerEvent(
         plugin.app.workspace.on('file-open', async (file: TFile | null) => {
@@ -11,7 +12,7 @@ export function setupLivePreviewExtension(plugin: Plugin) {
             
             // Check if it's a recurring task
             try {
-                // @ts-ignore - We'll call this method from the main plugin class
+                // Now we can directly call the method without type assertion
                 const { isTask, recurrence, isDone } = await plugin.isTaskWithRecurrence(file);
                 
                 // Remove any existing button
@@ -50,11 +51,14 @@ export function setupLivePreviewExtension(plugin: Plugin) {
                     button.className = 'recurring-task-complete-button';
                     
                     button.addEventListener('click', async () => {
-                        // @ts-ignore - We'll call this method from the main plugin class
+                        // Now we can directly call the method without type assertion
                         await plugin.completeRecurrence(file, recurrence);
                         
-                        // Remove the button after completion
-                        buttonContainer.remove();
+                        // Check if the task is now done before removing the button
+                        const { isDone } = await plugin.isTaskWithRecurrence(file);
+                        if (isDone) {
+                            buttonContainer.remove();
+                        }
                     });
                     
                     buttonContainer.appendChild(button);

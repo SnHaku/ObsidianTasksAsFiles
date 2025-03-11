@@ -1,21 +1,22 @@
 // ui/reading-view.ts
-import { Plugin, TFile } from 'obsidian';
+import { TFile } from 'obsidian';
 import { RecurrenceInfo } from '../recurrence-parser';
+import RecurringTasksPlugin from '../main'; // Import the specific plugin class
 
-export function setupReadingView(plugin: Plugin) {
+export function setupReadingView(plugin: RecurringTasksPlugin) { // Change type to RecurringTasksPlugin
     plugin.registerMarkdownPostProcessor((element, context) => {
         processMarkdownView(element, context, plugin);
     });
 }
 
-async function processMarkdownView(element: HTMLElement, context: any, plugin: Plugin) {
+async function processMarkdownView(element: HTMLElement, context: any, plugin: RecurringTasksPlugin) { // Change type here too
     // Only process if this is a full document view (not a preview or embed)
     if (!context.sourcePath) return;
     
     const file = plugin.app.vault.getAbstractFileByPath(context.sourcePath);
     if (!file || !(file instanceof TFile)) return;
     
-    // @ts-ignore - We'll call this method from the main plugin class
+    // Now we can directly call the method without type assertion
     const { isTask, recurrence, isDone } = await plugin.isTaskWithRecurrence(file);
     
     // Only show the button if it's a task with recurrence and not done
@@ -37,8 +38,14 @@ async function processMarkdownView(element: HTMLElement, context: any, plugin: P
         button.className = 'recurring-task-complete-button';
         
         button.addEventListener('click', async () => {
-            // @ts-ignore - We'll call this method from the main plugin class
+            // Now we can directly call the method without type assertion
             await plugin.completeRecurrence(file, recurrence);
+            
+            // Check if the task is now done
+            const { isDone } = await plugin.isTaskWithRecurrence(file);
+            if (isDone) {
+                buttonContainer.remove();
+            }
         });
         
         buttonContainer.appendChild(button);
