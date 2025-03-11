@@ -1,94 +1,128 @@
-# Obsidian Sample Plugin
+# Tasks as Files
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A plugin for Obsidian that treats individual notes as recurring tasks, allowing you to track completions while keeping the task active for future recurrences.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+- **Note-Based Tasks**: Each task is a separate note with YAML frontmatter
+- **Recurring Tasks**: Define recurrence patterns to repeat tasks
+- **Completion Tracking**: Record each completion while keeping the task active
+- **Flexible Recurrence**: Supports various recurrence patterns like daily, weekly, monthly
+- **Completion History**: Maintains a record of all completions in a structured format
+- **Missed Recurrences Handling**: Skips overdue tasks to avoid duplication
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+### Manual Installation
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+1. Download the latest release from the [GitHub releases page](https://github.com/yourusername/obsidian-tasks-as-files/releases)
+2. Extract the ZIP file into your Obsidian vault's `.obsidian/plugins` folder
+3. Enable the plugin in Obsidian's Community Plugins settings
 
-## Releasing new releases
+### From Obsidian Community Plugins 
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+This plugin is not available on Obsidian Community Plugins yet. 
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## Usage
 
-## Adding your plugin to the community plugin list
+### Creating a Task
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+1. Create a new note with the following YAML frontmatter:
 
-## How to use
+```yaml
+---
+Type: Task
+Due: 2023-10-15
+Recur: 1w
+Done: false
+---
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
 
-## Manually installing the plugin
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+The plugin will recognize this as a recurring task due on October 15, 2023, that repeats weekly.
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
 
-## Funding URL
 
-You can include funding URLs where people who use your plugin can financially support it.
+Recurrence Format
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
 
-If you have multiple URLs, you can also do:
+The plugin supports both shorthand and longform formats:
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
 
-## API Documentation
 
-See https://github.com/obsidianmd/obsidian-api
+Shorthand: 1d (daily), 2w (every 2 weeks), 3m (every 3 months), 1y (yearly)
+
+Add c suffix for "after completion": 2dc (2 days after completion)
+
+Longform: 1 day, 2 weeks, 3 months after completion
+
+
+
+Completing a Task
+
+
+
+When viewing a task note:
+
+
+
+A "Complete Current Recurrence" button will appear
+
+Clicking this button will:
+
+Record the completion in a table at the bottom of the note
+
+Update the due date based on the recurrence pattern
+
+Keep the task active for future recurrences
+
+
+
+Handling Missed Recurrences
+
+
+
+If you miss a recurring task:
+
+
+
+The plugin will detect missed recurrences
+
+A dialog will ask if you want to mark them as "completed" or "skipped"
+
+The task will be updated accordingly
+
+
+
+Settings
+
+
+
+The plugin offers various settings to customize its behavior:
+
+
+
+Task Identification: Configure how tasks are identified
+
+Recurrence: Customize recurrence properties and formats
+
+Completion Records: Configure how completions are recorded
+
+CompleteTime Management: Options for updating completion timestamps
+
+
+
+Contributing
+
+
+
+Contributions are welcome! Please feel free to submit a Pull Request or create an Issue on GitHub.
+
+
+
+License
+
+
+
+This project is licensed under the MIT License - see the LICENSE file for details.
