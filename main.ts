@@ -27,6 +27,43 @@ export default class RecurringTasksPlugin extends Plugin {
 
         // Add CSS styles
         this.loadStyles();
+
+        // Hook into manual save command
+        if (this.settings.updateCompleteTimeOnSave) {
+            // Use type assertion to tell TypeScript that commands exists
+            const appWithCommands = this.app as any;
+            const saveCommand = appWithCommands.commands.findCommand('editor:save-file');
+            if (saveCommand) {
+                const originalCallback = saveCommand.callback;
+                saveCommand.callback = async () => {
+                    // First, run the original save
+                    if (originalCallback) {
+                        originalCallback();
+                    }
+                    
+                    // Then update the CompleteTime field
+                    const file = this.app.workspace.getActiveFile();
+                    if (file && file.extension === 'md') {
+                        // Use a small timeout to ensure the save has completed
+                        setTimeout(async () => {
+                            await this.taskManager.updateCompleteTimeField(file);
+                        }, 100);
+                    }
+                };
+            }
+        }
+
+        // Register event for editor blur if enabled
+        if (this.settings.updateCompleteTimeOnBlur) {
+            this.registerEvent(
+                this.app.workspace.on('active-leaf-change', (leaf) => {
+                    const previousFile = this.app.workspace.getActiveFile();
+                    if (previousFile && previousFile.extension === 'md') {
+                        this.taskManager.updateCompleteTimeField(previousFile);
+                    }
+                })
+            );
+        }
     }
 
     async loadSettings() {
@@ -35,6 +72,10 @@ export default class RecurringTasksPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        
+        // Re-register events based on new settings
+        // Force refresh the current file to update UI
+        this.app.workspace.trigger('file-open', this.app.workspace.getActiveFile());
     }
 
     private loadStyles() {
