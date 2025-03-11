@@ -68,16 +68,18 @@ export function addCompletionRecord(
     }
 }
 
-export function isNoteATask(frontmatter: any, pluralProp: string, singularProp: string, typeValue: string): boolean {
-    // Check plural property (array)
-    if (frontmatter[pluralProp] && Array.isArray(frontmatter[pluralProp])) {
-        return frontmatter[pluralProp].includes(typeValue);
-    }
+export function isNoteATask(frontmatter: any, taskTypeProperty: string, taskTypeValue: string): boolean {
+    if (!frontmatter || !taskTypeProperty || !taskTypeValue) return false;
     
-    // Check singular property (string)
-    if (frontmatter[singularProp]) {
-        return frontmatter[singularProp] === typeValue;
-    }
+    const propertyValue = frontmatter[taskTypeProperty];
+    
+    if (propertyValue === undefined) return false;
+    
+    // Case 1: Direct equality for string values
+    if (propertyValue === taskTypeValue) return true;
+    
+    // Case 2: Array includes the value
+    if (Array.isArray(propertyValue) && propertyValue.includes(taskTypeValue)) return true;
     
     return false;
 }

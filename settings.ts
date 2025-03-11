@@ -3,33 +3,41 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import RecurringTasksPlugin from './main';
 
 export interface RecurringTasksSettings {
+    // Task identification and recurrence settings
     taskTypeProperty: string;
-    taskTypeSingularProperty: string;
     taskTypeValue: string;
     dueProperty: string;
     doneProperty: string;
-    completeTimeProperty: string;
     recurProperty: string;
+    
+    // Completion records settings
     completionHeading: string;
     completionPosition: 'top' | 'bottom';
     dateTimeFormat: string;
-    updateCompleteTimeOnSave: boolean;  // New setting
-    updateCompleteTimeOnBlur: boolean;  // New setting
+    
+    // CompleteTime management settings
+    completeTimeProperty: string;
+    updateCompleteTimeOnSave: boolean;
+    updateCompleteTimeOnBlur: boolean;
 }
 
 export const DEFAULT_SETTINGS: RecurringTasksSettings = {
-    taskTypeProperty: 'Types',
-    taskTypeSingularProperty: 'Type',
+    // Task identification and recurrence settings
+    taskTypeProperty: 'Type',
     taskTypeValue: 'Task',
     dueProperty: 'Due',
     doneProperty: 'Done',
-    completeTimeProperty: 'CompleteTime',
     recurProperty: 'Recur',
+    
+    // Completion records settings
     completionHeading: 'Completions',
     completionPosition: 'bottom',
     dateTimeFormat: 'YYYY-MM-DDTHH:mm:ssZ',
-    updateCompleteTimeOnSave: true,     // Default to true
-    updateCompleteTimeOnBlur: false     // Default to false
+    
+    // CompleteTime management settings
+    completeTimeProperty: 'CompleteTime',
+    updateCompleteTimeOnSave: true,
+    updateCompleteTimeOnBlur: false
 };
 
 export class RecurringTasksSettingTab extends PluginSettingTab {
@@ -45,25 +53,16 @@ export class RecurringTasksSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', {text: 'Recurring Tasks Settings'});
-
+        // Task Identification and Recurrence Section
+        containerEl.createEl('h2', {text: 'Task Identification & Recurrence'});
+        
         new Setting(containerEl)
-            .setName('Task Type Property (Plural)')
-            .setDesc('YAML property name that contains an array of types')
+            .setName('Task Type Property')
+            .setDesc('YAML property name that identifies a note as a task (works with both singular values and arrays)')
             .addText(text => text
                 .setValue(this.plugin.settings.taskTypeProperty)
                 .onChange(async (value) => {
                     this.plugin.settings.taskTypeProperty = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Task Type Property (Singular)')
-            .setDesc('YAML property name that contains a single type')
-            .addText(text => text
-                .setValue(this.plugin.settings.taskTypeSingularProperty)
-                .onChange(async (value) => {
-                    this.plugin.settings.taskTypeSingularProperty = value;
                     await this.plugin.saveSettings();
                 }));
 
@@ -98,16 +97,6 @@ export class RecurringTasksSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Complete Time Property')
-            .setDesc('YAML property name for when the task was completed')
-            .addText(text => text
-                .setValue(this.plugin.settings.completeTimeProperty)
-                .onChange(async (value) => {
-                    this.plugin.settings.completeTimeProperty = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
             .setName('Recurrence Property')
             .setDesc('YAML property name for the recurrence pattern')
             .addText(text => text
@@ -116,6 +105,9 @@ export class RecurringTasksSettingTab extends PluginSettingTab {
                     this.plugin.settings.recurProperty = value;
                     await this.plugin.saveSettings();
                 }));
+
+        // Completion Records Section
+        containerEl.createEl('h2', {text: 'Completion Records'});
 
         new Setting(containerEl)
             .setName('Completion Heading')
@@ -149,6 +141,19 @@ export class RecurringTasksSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
                 
+        // CompleteTime Management Section
+        containerEl.createEl('h2', {text: 'CompleteTime Management'});
+        
+        new Setting(containerEl)
+            .setName('Complete Time Property')
+            .setDesc('YAML property name for when the task was completed')
+            .addText(text => text
+                .setValue(this.plugin.settings.completeTimeProperty)
+                .onChange(async (value) => {
+                    this.plugin.settings.completeTimeProperty = value;
+                    await this.plugin.saveSettings();
+                }));
+
         new Setting(containerEl)
             .setName('Update CompleteTime on Save')
             .setDesc('Automatically update the CompleteTime field when a task is saved')

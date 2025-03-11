@@ -14,6 +14,7 @@ export class TaskManager {
         this.app = app;
         this.settings = settings;
     }
+    
     async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null, isDone: boolean }> {
         if (!file || file.extension !== 'md') {
             return { isTask: false, recurrence: null, isDone: false };
@@ -27,11 +28,10 @@ export class TaskManager {
         
         const frontmatter = metadata.frontmatter;
         
-        // Check if it's a task
+        // Check if it's a task using the simplified method
         const isTask = isNoteATask(
             frontmatter, 
             this.settings.taskTypeProperty, 
-            this.settings.taskTypeSingularProperty, 
             this.settings.taskTypeValue
         );
         
@@ -163,11 +163,10 @@ export class TaskManager {
         const doneProperty = this.settings.doneProperty;
         const completeTimeProperty = this.settings.completeTimeProperty;
         
-        // Check if it's a task
+        // Check if it's a task using the simplified method
         const isTask = isNoteATask(
             frontmatter, 
             this.settings.taskTypeProperty, 
-            this.settings.taskTypeSingularProperty, 
             this.settings.taskTypeValue
         );
         
