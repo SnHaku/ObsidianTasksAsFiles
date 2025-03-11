@@ -46,7 +46,13 @@ export default class RecurringTasksPlugin extends Plugin {
                     if (file && file.extension === 'md') {
                         // Use a small timeout to ensure the save has completed
                         setTimeout(async () => {
-                            await this.taskManager.updateCompleteTimeField(file);
+                            const updated = await this.taskManager.updateCompleteTimeField(file);
+                            
+                            // If the CompleteTime field was updated, refresh the UI
+                            if (updated) {
+                                // Trigger a file-open event to refresh the button visibility
+                                this.app.workspace.trigger('file-open', file);
+                            }
                         }, 100);
                     }
                 };

@@ -2,7 +2,7 @@
 import { App, Notice, TFile } from 'obsidian';
 import { moment } from 'obsidian';
 import { RecurrenceInfo, calculateNextDueDate, getMissedRecurrences, parseRecurrence } from './recurrence-parser';
-import { updateFrontmatterProperty, addCompletionRecord, isNoteATask } from './utils';
+import { addCompletionRecord, isNoteATask } from './utils';
 import { RecurringTasksSettings } from './settings';
 import { MissedRecurrencesModal } from './ui/missed-recurrences-modal';
 
@@ -14,6 +14,7 @@ export class TaskManager {
         this.app = app;
         this.settings = settings;
     }
+    
     async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null, isDone: boolean }> {
         if (!file || file.extension !== 'md') {
             return { isTask: false, recurrence: null, isDone: false };
@@ -27,11 +28,10 @@ export class TaskManager {
         
         const frontmatter = metadata.frontmatter;
         
-        // Check if it's a task
+        // Check if it's a task using the simplified method
         const isTask = isNoteATask(
             frontmatter, 
             this.settings.taskTypeProperty, 
-            this.settings.taskTypeSingularProperty, 
             this.settings.taskTypeValue
         );
         
@@ -52,8 +52,7 @@ export class TaskManager {
     }
     
     async completeRecurrence(file: TFile, recurrence: RecurrenceInfo) {
-        // Get the current content and frontmatter
-        const content = await this.app.vault.read(file);
+        // Get the frontmatter
         const metadata = this.app.metadataCache.getFileCache(file);
         
         if (!metadata || !metadata.frontmatter) {
@@ -92,17 +91,21 @@ export class TaskManager {
         currentDue: string, 
         recurrence: RecurrenceInfo
     ) {
-        // Get the current content of the file
-        const content = await this.app.vault.read(file);
-        
         // Calculate the next due date
         const nextDue = calculateNextDueDate(currentDue, now, recurrence);
         
-        // Update the frontmatter with the new due date
-        let updatedContent = updateFrontmatterProperty(content, this.settings.dueProperty, nextDue);
+        // Update the frontmatter with the new due date using Obsidian's API
+        await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+            frontmatter[this.settings.dueProperty] = nextDue;
+        });
+        
+        // Get the current content to add completion records
+        const content = await this.app.vault.read(file);
         
         // Add completion records for missed dates
         const status = action === 'complete' ? 'completed' : 'skipped';
+        let updatedContent = content;
+        
         for (const missedDate of missedDates) {
             updatedContent = addCompletionRecord(
                 updatedContent, 
@@ -110,12 +113,16 @@ export class TaskManager {
                 status, 
                 this.settings.completionHeading, 
                 this.settings.completionPosition,
-                this.settings.dateTimeFormat
+                this.settings.dateTimeFormat,
+                this.settings.completedIndicator,  // Add completed indicator
+                this.settings.skippedIndicator     // Add skipped indicator
             );
         }
         
-        // Save the updated content
-        await this.app.vault.modify(file, updatedContent);
+        // Save the updated content with completion records
+        if (updatedContent !== content) {
+            await this.app.vault.modify(file, updatedContent);
+        }
         
         new Notice(`Updated due date and added ${missedDates.length} ${status} records.`);
     }
@@ -126,33 +133,39 @@ export class TaskManager {
         currentDue: string, 
         recurrence: RecurrenceInfo
     ) {
-        // Get the current content of the file
-        const content = await this.app.vault.read(file);
-        
         // Calculate the next due date
         const nextDue = calculateNextDueDate(currentDue, completionTime, recurrence);
         
-        // Update the frontmatter with the new due date
-        let updatedContent = updateFrontmatterProperty(content, this.settings.dueProperty, nextDue);
+        // Update the frontmatter with the new due date using Obsidian's API
+        await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+            frontmatter[this.settings.dueProperty] = nextDue;
+        });
+        
+        // Get the current content to add completion record
+        const content = await this.app.vault.read(file);
         
         // Add a completion record
-        updatedContent = addCompletionRecord(
-            updatedContent, 
+        const updatedContent = addCompletionRecord(
+            content, 
             completionTime, 
             'completed', 
             this.settings.completionHeading, 
             this.settings.completionPosition,
-            this.settings.dateTimeFormat
+            this.settings.dateTimeFormat,
+            this.settings.completedIndicator,  // Add completed indicator
+            this.settings.skippedIndicator     // Add skipped indicator
         );
         
-        // Save the updated content
-        await this.app.vault.modify(file, updatedContent);
+        // Save the updated content with completion record
+        if (updatedContent !== content) {
+            await this.app.vault.modify(file, updatedContent);
+        }
         
         new Notice('Task completed and due date updated.');
     }
 
     async updateCompleteTimeField(file: TFile): Promise<boolean> {
-        // Get the current content and frontmatter
+        // Get the frontmatter
         const metadata = this.app.metadataCache.getFileCache(file);
         
         if (!metadata || !metadata.frontmatter) {
@@ -167,7 +180,6 @@ export class TaskManager {
         const isTask = isNoteATask(
             frontmatter, 
             this.settings.taskTypeProperty, 
-            this.settings.taskTypeSingularProperty, 
             this.settings.taskTypeValue
         );
         
@@ -191,21 +203,17 @@ export class TaskManager {
         }
         
         if (shouldUpdate) {
-            // Update the file
-            const content = await this.app.vault.read(file);
-            let updatedContent: string;
+            // Update the frontmatter using Obsidian's API
+            await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+                if (isDone) {
+                    // Set CompleteTime to current time
+                    frontmatter[completeTimeProperty] = moment().format();
+                } else {
+                    // Set CompleteTime to empty string instead of removing it
+                    frontmatter[completeTimeProperty] = '';
+                }
+            });
             
-            if (isDone) {
-                // Set CompleteTime to current time
-                const now = moment().format();
-                updatedContent = updateFrontmatterProperty(content, completeTimeProperty, now);
-            } else {
-                // Clear the CompleteTime field
-                updatedContent = updateFrontmatterProperty(content, completeTimeProperty, '');
-            }
-            
-            // Save the updated content
-            await this.app.vault.modify(file, updatedContent);
             return true;
         }
         
