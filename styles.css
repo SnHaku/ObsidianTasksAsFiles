@@ -1,0 +1,24 @@
+/* Recurring Tasks Plugin Styles */
+
+/* Settings tab styles */
+.recurring-tasks-help {
+    background-color: var(--background-secondary);
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.recurring-tasks-help h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.recurring-tasks-help ul {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-left: 20px;
+}
+
+.recurring-tasks-help li {
+    margin-bottom: 3px;
+}
