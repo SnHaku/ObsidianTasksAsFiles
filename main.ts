@@ -28,21 +28,32 @@ export default class RecurringTasksPlugin extends Plugin {
         // Add CSS styles
         this.loadStyles();
 
-        // Register event for file save
+        // Hook into manual save command
         if (this.settings.updateCompleteTimeOnSave) {
-            this.registerEvent(
-                this.app.vault.on('modify', (file: TFile) => {
-                    if (file && file.extension === 'md') {
-                        this.taskManager.updateCompleteTimeField(file);
-                        
-                        // Also update the UI to hide the button if needed
-                        this.app.workspace.trigger('file-open', file);
+            // Use type assertion to tell TypeScript that commands exists
+            const appWithCommands = this.app as any;
+            const saveCommand = appWithCommands.commands.findCommand('editor:save-file');
+            if (saveCommand) {
+                const originalCallback = saveCommand.callback;
+                saveCommand.callback = async () => {
+                    // First, run the original save
+                    if (originalCallback) {
+                        originalCallback();
                     }
-                })
-            );
+                    
+                    // Then update the CompleteTime field
+                    const file = this.app.workspace.getActiveFile();
+                    if (file && file.extension === 'md') {
+                        // Use a small timeout to ensure the save has completed
+                        setTimeout(async () => {
+                            await this.taskManager.updateCompleteTimeField(file);
+                        }, 100);
+                    }
+                };
+            }
         }
 
-        // Register event for editor blur
+        // Register event for editor blur if enabled
         if (this.settings.updateCompleteTimeOnBlur) {
             this.registerEvent(
                 this.app.workspace.on('active-leaf-change', (leaf) => {
@@ -63,7 +74,7 @@ export default class RecurringTasksPlugin extends Plugin {
         await this.saveData(this.settings);
         
         // Re-register events based on new settings
-        // First, unload current events
+        // Force refresh the current file to update UI
         this.app.workspace.trigger('file-open', this.app.workspace.getActiveFile());
     }
 
