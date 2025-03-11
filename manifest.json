@@ -1,10 +1,10 @@
 {
 	"id": "recurring-tasks",
 	"name": "Recurring Tasks",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Manage recurring tasks in Obsidian with customizable recurrence patterns and automatic task regeneration.",
+	"description": "A plugin for managing recurring tasks with YAML frontmatter.",
 	"author": "Your Name",
-	"authorUrl": "Your URL (or remove this line if not applicable)",
+	"authorUrl": "https://github.com/yourusername",
 	"isDesktopOnly": false
-}
+  }
