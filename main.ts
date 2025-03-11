@@ -1,68 +1,32 @@
-import { App, Editor, MarkdownView, Plugin, TFile, TAbstractFile } from 'obsidian';
-import { RecurringTasksSettings, DEFAULT_SETTINGS } from './settings';
-import { RecurringTasksSettingTab } from './settings-tab';
+// main.ts
+import { Plugin, TFile } from 'obsidian';
+import { RecurringTasksSettings, DEFAULT_SETTINGS, RecurringTasksSettingTab } from './settings';
+import { setupReadingView } from './ui/reading-view';
+import { setupLivePreviewExtension } from './ui/live-preview';
 import { TaskManager } from './task-manager';
+import { RecurrenceInfo } from './recurrence-parser';
 
 export default class RecurringTasksPlugin extends Plugin {
     settings: RecurringTasksSettings;
     taskManager: TaskManager;
 
     async onload() {
-		await this.loadSettings();
-	
-		// Initialize the task manager
-		this.taskManager = new TaskManager(this.app, this.settings);
-	
-		// Add settings tab
-		this.addSettingTab(new RecurringTasksSettingTab(this.app, this));
-	
-		// Register event handlers for file modifications
-		this.registerEvent(
-			this.app.vault.on('modify', (file: TAbstractFile) => {
-				// Check if the file is a TFile before processing
-				if (file instanceof TFile) {
-					this.handleFileModification(file);
-				}
-			})
-		);
-	
-		// Add command to mark a task as completed
-		this.addCommand({
-			id: 'mark-task-completed',
-			name: 'Mark task as completed',
-			checkCallback: (checking: boolean) => {
-				const file = this.app.workspace.getActiveFile();
-				if (file && file.extension === 'md' && this.isTaskFile(file)) {
-					if (!checking) {
-						this.completeTask(file);
-					}
-					return true;
-				}
-				return false;
-			}
-		});
-	
-		// Add command to mark a task as incomplete
-		this.addCommand({
-			id: 'mark-task-incomplete',
-			name: 'Mark task as incomplete',
-			checkCallback: (checking: boolean) => {
-				const file = this.app.workspace.getActiveFile();
-				if (file && file.extension === 'md' && this.isTaskFile(file)) {
-					if (!checking) {
-						this.incompleteTask(file);
-					}
-					return true;
-				}
-				return false;
-			}
-		});
-	
-		console.log('Recurring Tasks plugin loaded');
-	}
+        await this.loadSettings();
 
-    onunload() {
-        console.log('Recurring Tasks plugin unloaded');
+        // Initialize the task manager
+        this.taskManager = new TaskManager(this.app, this.settings);
+
+        // Register settings tab
+        this.addSettingTab(new RecurringTasksSettingTab(this.app, this));
+
+        // Setup Reading View
+        setupReadingView(this);
+
+        // Setup Live Preview extension
+        setupLivePreviewExtension(this);
+
+        // Add CSS styles
+        this.loadStyles();
     }
 
     async loadSettings() {
@@ -73,96 +37,51 @@ export default class RecurringTasksPlugin extends Plugin {
         await this.saveData(this.settings);
     }
 
-    /**
-	 * Handle file modifications to detect task completion status changes
-	 */
-	private async handleFileModification(file: TFile) {
-		// Only process markdown files
-		if (file.extension !== 'md') {
-			return;
-		}
-
-		// Check if this is a task file we should process
-		if (!this.isTaskFile(file)) {
-			return;
-		}
-
-		try {
-			// Read the file content
-			const content = await this.app.vault.read(file);
-			
-			// Check for completion status in frontmatter
-			const completionMatch = content.match(
-				new RegExp(`${this.settings.completionProperty}:\\s*(true|false)`, 'i')
-			);
-			
-			if (completionMatch) {
-				const isCompleted = completionMatch[1].toLowerCase() === 'true';
-				
-				// Process the task completion
-				await this.taskManager.processTaskCompletion(file, isCompleted);
-			}
-		} catch (error) {
-			console.error('Error processing file modification:', error);
-		}
-	}
-
-    /**
-     * Check if a file is a task file that should be processed
-     */
-    private isTaskFile(file: TFile): boolean {
-        // Check if the file is in the tasks directory or completed directory
-        return (
-            file.path.startsWith(this.settings.tasksDirectory) ||
-            file.path.startsWith(this.settings.completedDirectory)
-        );
-    }
-
-    /**
-     * Mark the current task as completed
-     */
-    private async completeTask(file: TFile) {
-        try {
-            const content = await this.app.vault.read(file);
-            
-            // Check if the task is already completed
-            const completionMatch = content.match(
-                new RegExp(`${this.settings.completionProperty}:\\s*(true|false)`, 'i')
-            );
-            
-            if (completionMatch && completionMatch[1].toLowerCase() === 'true') {
-                // Task is already completed
-                return;
+    private loadStyles() {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'recurring-tasks-styles';
+        styleEl.textContent = `
+            .recurring-task-button-container {
+                margin: 1em 0;
+                text-align: center;
             }
             
-            // Process the task completion
-            await this.taskManager.processTaskCompletion(file, true);
-        } catch (error) {
-            console.error('Error completing task:', error);
-        }
-    }
-
-    /**
-     * Mark the current task as incomplete
-     */
-    private async incompleteTask(file: TFile) {
-        try {
-            const content = await this.app.vault.read(file);
-            
-            // Check if the task is already incomplete
-            const completionMatch = content.match(
-                new RegExp(`${this.settings.completionProperty}:\\s*(true|false)`, 'i')
-            );
-            
-            if (completionMatch && completionMatch[1].toLowerCase() === 'false') {
-                // Task is already incomplete
-                return;
+            .recurring-task-complete-button {
+                background-color: var(--interactive-accent);
+                color: var(--text-on-accent);
+                padding: 8px 16px;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
             }
             
-            // Process the task completion
-            await this.taskManager.processTaskCompletion(file, false);
-        } catch (error) {
-            console.error('Error marking task as incomplete:', error);
-        }
+            .recurring-task-complete-button:hover {
+                background-color: var(--interactive-accent-hover);
+            }
+            
+            .missed-recurrences-buttons {
+                display: flex;
+                justify-content: space-around;
+                margin-top: 1em;
+            }
+            
+            .missed-recurrences-buttons button {
+                padding: 8px 16px;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(styleEl);
+    }
+
+    // These methods are called from the UI components
+    async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null, isDone: boolean }> {
+        return this.taskManager.isTaskWithRecurrence(file);
+    }
+
+    async completeRecurrence(file: TFile, recurrence: RecurrenceInfo) {
+        return this.taskManager.completeRecurrence(file, recurrence);
     }
 }
