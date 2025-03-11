@@ -1,110 +1,95 @@
 // ui/live-preview.ts
-import { EditorView, ViewUpdate, ViewPlugin } from "@codemirror/view";
+import { EditorView, ViewPlugin, WidgetType, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { Plugin, TFile } from 'obsidian';
+import { RecurrenceInfo } from '../recurrence-parser';
 
 export function setupLivePreviewExtension(plugin: Plugin) {
+    // Register the CodeMirror 6 extension
     plugin.registerEditorExtension([
-        createRecurringTaskViewPlugin(plugin)
+        recurringTaskButtonPlugin(plugin)
     ]);
 }
 
-function createRecurringTaskViewPlugin(plugin: Plugin) {
+// Button widget that will be rendered in the editor
+class RecurringTaskButtonWidget extends WidgetType {
+    private plugin: Plugin;
+    private file: TFile;
+    private recurrence: RecurrenceInfo;
+
+    constructor(plugin: Plugin, file: TFile, recurrence: RecurrenceInfo) {
+        super();
+        this.plugin = plugin;
+        this.file = file;
+        this.recurrence = recurrence;
+    }
+
+    toDOM() {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'recurring-task-button-container';
+        
+        const button = document.createElement('button');
+        button.textContent = 'Complete Current Recurrence';
+        button.className = 'recurring-task-complete-button';
+        
+        button.addEventListener('click', async () => {
+            // @ts-ignore - We'll call this method from the main plugin class
+            await this.plugin.completeRecurrence(this.file, this.recurrence);
+        });
+        
+        buttonContainer.appendChild(button);
+        return buttonContainer;
+    }
+}
+
+// CodeMirror ViewPlugin that manages the button decoration
+function recurringTaskButtonPlugin(plugin: Plugin) {
     return ViewPlugin.fromClass(class {
-        button: HTMLElement | null = null;
-        lastProcessedFile: string | null = null;
-        
+        decorations: DecorationSet;
+
         constructor(view: EditorView) {
-            // Initial update
-            setTimeout(() => this.updateButton(view), 100);
+            this.decorations = Decoration.none;
+            this.checkAndUpdateDecorations(view);
         }
-        
-        update(update: ViewUpdate) {
-            // Only update if the document has changed significantly
-            if (update.docChanged && update.changes.length > 0) {
-                // Use setTimeout to avoid potential recursive updates
-                setTimeout(() => this.updateButton(update.view), 100);
-            }
-        }
-        
-        async updateButton(view: EditorView) {
+
+        async checkAndUpdateDecorations(view: EditorView) {
+            const file = plugin.app.workspace.getActiveFile();
+            if (!file) return;
+
             try {
-                // Get the current file
-                const file = plugin.app.workspace.getActiveFile();
-                if (!file) return;
-                
-                // Skip if we've already processed this file and nothing has changed
-                if (this.lastProcessedFile === file.path) return;
-                this.lastProcessedFile = file.path;
-                
-                // Remove existing button if it exists
-                if (this.button && this.button.parentNode) {
-                    this.button.remove();
-                    this.button = null;
-                }
-                
                 // @ts-ignore - We'll call this method from the main plugin class
-                const { isTask, recurrence } = await plugin.isTaskWithRecurrence(file);
-                if (!isTask || !recurrence) return;
+                const { isTask, recurrence, isDone } = await plugin.isTaskWithRecurrence(file);
                 
-                // Create the button
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = 'recurring-task-button-container';
-                
-                const button = document.createElement('button');
-                button.textContent = 'Complete Current Recurrence';
-                button.className = 'recurring-task-complete-button';
-                
-                button.addEventListener('click', async () => {
-                    // @ts-ignore - We'll call this method from the main plugin class
-                    await plugin.completeRecurrence(file, recurrence);
-                });
-                
-                buttonContainer.appendChild(button);
-                this.button = buttonContainer;
-                
-                // Find where to insert the button (after frontmatter)
-                const frontmatterEnd = this.findFrontmatterEnd(view);
-                if (frontmatterEnd === -1) return;
-                
-                // Insert the button after frontmatter
-                const domAtPos = view.domAtPos(frontmatterEnd);
-                if (!domAtPos.node) return;
-                
-                let targetNode = domAtPos.node;
-                if (targetNode.nodeType === Node.TEXT_NODE && targetNode.parentNode) {
-                    targetNode = targetNode.parentNode;
-                }
-                
-                if (targetNode.parentNode) {
-                    targetNode.parentNode.insertBefore(buttonContainer, targetNode.nextSibling);
+                // Only show the button if it's a task with recurrence and not done
+                if (isTask && recurrence && !isDone) {
+                    // Find the end of frontmatter
+                    const text = view.state.doc.toString();
+                    const frontmatterEndPos = text.indexOf('---\n') + 4;
+                    const secondFrontmatterEndPos = text.indexOf('---\n', frontmatterEndPos) + 4;
+                    
+                    if (secondFrontmatterEndPos > 4) {
+                        // Create decoration at the end of frontmatter
+                        const widget = Decoration.widget({
+                            widget: new RecurringTaskButtonWidget(plugin, file, recurrence),
+                            side: 1
+                        });
+                        
+                        this.decorations = Decoration.set([widget.range(secondFrontmatterEndPos)]);
+                    }
+                } else {
+                    this.decorations = Decoration.none;
                 }
             } catch (error) {
-                console.error("Error in updateButton:", error);
+                console.error("Error checking if file is a recurring task:", error);
+                this.decorations = Decoration.none;
             }
         }
-        
-        findFrontmatterEnd(view: EditorView): number {
-            try {
-                const doc = view.state.doc;
-                const text = doc.toString();
-                const frontmatterMatch = /^---\n([\s\S]*?)\n---/.exec(text);
-                
-                if (frontmatterMatch) {
-                    return frontmatterMatch[0].length;
-                }
-                
-                return -1;
-            } catch (error) {
-                console.error("Error in findFrontmatterEnd:", error);
-                return -1;
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged) {
+                this.checkAndUpdateDecorations(update.view);
             }
         }
-        
-        destroy() {
-            if (this.button && this.button.parentNode) {
-                this.button.remove();
-                this.button = null;
-            }
-        }
+    }, {
+        decorations: v => v.decorations
     });
 }

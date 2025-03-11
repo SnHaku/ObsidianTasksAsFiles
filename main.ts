@@ -77,7 +77,7 @@ export default class RecurringTasksPlugin extends Plugin {
     }
 
     // These methods are called from the UI components
-    async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null }> {
+    async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null, isDone: boolean }> {
         return this.taskManager.isTaskWithRecurrence(file);
     }
 

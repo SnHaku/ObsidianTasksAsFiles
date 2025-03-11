@@ -16,9 +16,10 @@ async function processMarkdownView(element: HTMLElement, context: any, plugin: P
     if (!file || !(file instanceof TFile)) return;
     
     // @ts-ignore - We'll call this method from the main plugin class
-    const { isTask, recurrence } = await plugin.isTaskWithRecurrence(file);
+    const { isTask, recurrence, isDone } = await plugin.isTaskWithRecurrence(file);
     
-    if (isTask && recurrence) {
+    // Only show the button if it's a task with recurrence and not done
+    if (isTask && recurrence && !isDone) {
         // Find the frontmatter element
         const frontmatterEl = element.querySelector('.frontmatter');
         

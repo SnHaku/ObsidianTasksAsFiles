@@ -14,16 +14,15 @@ export class TaskManager {
         this.app = app;
         this.settings = settings;
     }
-    
-    async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null }> {
+    async isTaskWithRecurrence(file: TFile): Promise<{ isTask: boolean, recurrence: RecurrenceInfo | null, isDone: boolean }> {
         if (!file || file.extension !== 'md') {
-            return { isTask: false, recurrence: null };
+            return { isTask: false, recurrence: null, isDone: false };
         }
         
         // Use Obsidian's metadataCache to get frontmatter
         const metadata = this.app.metadataCache.getFileCache(file);
         if (!metadata || !metadata.frontmatter) {
-            return { isTask: false, recurrence: null };
+            return { isTask: false, recurrence: null, isDone: false };
         }
         
         const frontmatter = metadata.frontmatter;
@@ -37,7 +36,7 @@ export class TaskManager {
         );
         
         if (!isTask) {
-            return { isTask: false, recurrence: null };
+            return { isTask: false, recurrence: null, isDone: false };
         }
         
         // Check if it has a recurrence
@@ -45,7 +44,11 @@ export class TaskManager {
         const recurrenceString = frontmatter[recurProperty];
         const recurrence = parseRecurrence(recurrenceString);
         
-        return { isTask, recurrence };
+        // Check if the task is done
+        const doneProperty = this.settings.doneProperty;
+        const isDone = frontmatter[doneProperty] === true;
+        
+        return { isTask, recurrence, isDone };
     }
     
     async completeRecurrence(file: TFile, recurrence: RecurrenceInfo) {
