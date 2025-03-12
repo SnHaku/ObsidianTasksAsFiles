@@ -2,6 +2,8 @@
 
 A plugin for Obsidian that treats individual notes as recurring tasks, allowing you to track completions while keeping the task active for future recurrences.
 
+Intended to be used with the Templater plugin (or just Templates) for task creation and the Projects plugin for listing tasks, but it's not directly integrated with either. 
+
 ## Features
 
 - **Note-Based Tasks**: Each task is a separate note with YAML frontmatter
@@ -116,6 +118,7 @@ CompleteTime Management: Options for updating completion timestamps
 Contributing
 
 
+Warning for all who wander into the codebase: this project's codebase is nearly all written by LLM. Some design decisions may be suboptimal as a result. 
 
 Contributions are welcome! Please feel free to submit a Pull Request or create an Issue on GitHub.
 
