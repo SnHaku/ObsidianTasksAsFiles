@@ -1,7 +1,7 @@
-// main.ts (updated)
+// main.ts 
 import { Plugin, TFile } from 'obsidian';
 import { RecurringTasksSettings, DEFAULT_SETTINGS, RecurringTasksSettingTab } from './settings';
-import { setupTaskControls } from './ui/task-controls'; // New import
+import { setupTaskControls } from './ui/task-controls';
 import { TaskManager } from './task-manager';
 import { RecurrenceInfo } from './recurrence-parser';
 

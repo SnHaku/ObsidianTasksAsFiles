@@ -2,6 +2,7 @@
 import { TFile, MarkdownView } from 'obsidian';
 import RecurringTasksPlugin from '../main';
 import { createCompleteTaskButton, createCompleteRecurrenceButton, createTaskInfoDisplay } from './components';
+import { parseRecurrence } from '../recurrence-parser';
 
 export function setupTaskControls(plugin: RecurringTasksPlugin) {
     // Register for file-open events to update the controls for both modes
@@ -108,10 +109,29 @@ function createControlsContainer(
     const completeTaskButton = createCompleteTaskButton(plugin, file, isDone);
     buttonsContainer.appendChild(completeTaskButton);
     
-    // Complete Current Recurrence button for recurring tasks
-    if (recurrence && !isDone) {
-        const completeRecurrenceButton = createCompleteRecurrenceButton(plugin, file, recurrence);
-        buttonsContainer.appendChild(completeRecurrenceButton);
+    // Check for recurrence property in frontmatter
+    const metadata = plugin.app.metadataCache.getFileCache(file);
+    if (metadata && metadata.frontmatter && !isDone) {
+        const recurProperty = plugin.settings.recurProperty;
+        const recurrenceString = metadata.frontmatter[recurProperty];
+        
+        if (recurrenceString) {
+            // If recurrence string exists but couldn't be parsed correctly
+            if (!recurrence) {
+                // Create disabled button showing invalid format
+                const invalidButton = document.createElement('button');
+                invalidButton.className = 'recurring-task-complete-button';
+                invalidButton.textContent = `${recurProperty} Format Unrecognized`;
+                invalidButton.disabled = true;
+                invalidButton.style.opacity = '0.7';
+                invalidButton.style.cursor = 'not-allowed';
+                buttonsContainer.appendChild(invalidButton);
+            } else {
+                // Valid recurrence - show the normal button
+                const completeRecurrenceButton = createCompleteRecurrenceButton(plugin, file, recurrence);
+                buttonsContainer.appendChild(completeRecurrenceButton);
+            }
+        }
     }
     
     container.appendChild(buttonsContainer);

@@ -1,29 +1,18 @@
-// utils.ts
+// utils/completion-records.ts
 import { moment } from 'obsidian';
 
-export function updateFrontmatterProperty(content: string, property: string, value: string): string {
-    const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
-    const match = frontmatterRegex.exec(content);
-    
-    if (!match) return content;
-    
-    const frontmatter = match[1];
-    const propertyRegex = new RegExp(`(^|\\n)${property}:.*?(\\n|$)`, 'g');
-    
-    if (propertyRegex.test(frontmatter)) {
-        // Update existing property
-        const updatedFrontmatter = frontmatter.replace(
-            propertyRegex, 
-            `$1${property}: ${value}$2`
-        );
-        return content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-    } else {
-        // Add new property
-        const updatedFrontmatter = `${frontmatter}\n${property}: ${value}`;
-        return content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-    }
-}
-
+/**
+ * Adds a completion record to the note content
+ * @param content - The current note content
+ * @param datetime - The completion datetime
+ * @param status - The completion status ('completed' or 'skipped')
+ * @param heading - The heading text for the completion section
+ * @param position - Where to place the completion section ('top' or 'bottom')
+ * @param dateTimeFormat - The format for displaying dates
+ * @param completedIndicator - The indicator for completed status
+ * @param skippedIndicator - The indicator for skipped status
+ * @returns Updated note content with the new completion record
+ */
 export function addCompletionRecord(
     content: string, 
     datetime: string, 
@@ -152,20 +141,4 @@ export function addCompletionRecord(
             ].join('');
         }
     }
-}
-
-export function isNoteATask(frontmatter: any, taskTypeProperty: string, taskTypeValue: string): boolean {
-    if (!frontmatter || !taskTypeProperty || !taskTypeValue) return false;
-    
-    const propertyValue = frontmatter[taskTypeProperty];
-    
-    if (propertyValue === undefined) return false;
-    
-    // Case 1: Direct equality for string values
-    if (propertyValue === taskTypeValue) return true;
-    
-    // Case 2: Array includes the value
-    if (Array.isArray(propertyValue) && propertyValue.includes(taskTypeValue)) return true;
-    
-    return false;
 }
