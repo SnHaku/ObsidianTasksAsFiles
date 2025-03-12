@@ -1,8 +1,7 @@
-// main.ts
+// main.ts (updated)
 import { Plugin, TFile } from 'obsidian';
 import { RecurringTasksSettings, DEFAULT_SETTINGS, RecurringTasksSettingTab } from './settings';
-import { setupReadingView } from './ui/reading-view';
-import { setupLivePreviewExtension } from './ui/live-preview';
+import { setupTaskControls } from './ui/task-controls'; // New import
 import { TaskManager } from './task-manager';
 import { RecurrenceInfo } from './recurrence-parser';
 
@@ -19,11 +18,8 @@ export default class RecurringTasksPlugin extends Plugin {
         // Register settings tab
         this.addSettingTab(new RecurringTasksSettingTab(this.app, this));
 
-        // Setup Reading View
-        setupReadingView(this);
-
-        // Setup Live Preview extension
-        setupLivePreviewExtension(this);
+        // Setup unified task controls (replaces the previous Reading View and Live Preview setup)
+        setupTaskControls(this);
 
         // Add CSS styles
         this.loadStyles();
@@ -118,6 +114,10 @@ export default class RecurringTasksPlugin extends Plugin {
                 border-radius: 4px;
                 border: none;
                 cursor: pointer;
+            }
+            
+            .task-controls-container {
+                width: 100%;
             }
         `;
         document.head.appendChild(styleEl);
