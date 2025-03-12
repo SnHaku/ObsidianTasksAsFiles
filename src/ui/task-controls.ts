@@ -1,8 +1,7 @@
-// ui/task-controls.ts - Fixed implementation
-
+// ui/task-controls.ts
 import { TFile, MarkdownView } from 'obsidian';
-import { moment } from 'obsidian';
 import RecurringTasksPlugin from '../main';
+import { createCompleteTaskButton, createCompleteRecurrenceButton, createTaskInfoDisplay } from './components';
 
 export function setupTaskControls(plugin: RecurringTasksPlugin) {
     // Register for file-open events to update the controls for both modes
@@ -105,93 +104,20 @@ function createControlsContainer(
     buttonsContainer.style.gap = '8px';
     buttonsContainer.style.paddingLeft = '12px';
     
-    // Get the task type value from settings
-    const taskTypeValue = plugin.settings.taskTypeValue;
-    
-    // Complete/Uncomplete Task button for all tasks
-    const completeTaskButton = document.createElement('button');
-    completeTaskButton.className = 'recurring-task-complete-button'; // Use the existing style class
-    completeTaskButton.textContent = isDone ? `Uncomplete ${taskTypeValue}` : `Complete ${taskTypeValue}`;
-    
-    completeTaskButton.addEventListener('click', async () => {
-        // Get the current time for CompleteTime
-        const now = moment().format();
-        
-        // Update both Done and CompleteTime properties in a single operation
-        await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-            if (frontmatter) {
-                const doneProperty = plugin.settings.doneProperty;
-                const completeTimeProperty = plugin.settings.completeTimeProperty;
-                
-                // Toggle the Done property
-                frontmatter[doneProperty] = !isDone;
-                
-                // Update CompleteTime based on the new Done state
-                if (!isDone) { // It's becoming true
-                    frontmatter[completeTimeProperty] = now;
-                } else { // It's becoming false
-                    frontmatter[completeTimeProperty] = '';
-                }
-            }
-        });
-        
-        // Force a UI refresh by triggering a file-open event
-        setTimeout(() => {
-            plugin.app.workspace.trigger('file-open', file);
-        }, 50);
-    });
-    
+    // Complete/Uncomplete Task button
+    const completeTaskButton = createCompleteTaskButton(plugin, file, isDone);
     buttonsContainer.appendChild(completeTaskButton);
     
     // Complete Current Recurrence button for recurring tasks
     if (recurrence && !isDone) {
-        const completeRecurrenceButton = document.createElement('button');
-        completeRecurrenceButton.className = 'recurring-task-complete-button';
-        completeRecurrenceButton.textContent = `Complete Current Recurrence`;
-        
-        completeRecurrenceButton.addEventListener('click', async () => {
-            await plugin.completeRecurrence(file, recurrence);
-            
-            // Force a UI refresh by triggering a file-open event
-            // Use a timeout to ensure the file modifications are complete
-            setTimeout(() => {
-                plugin.app.workspace.trigger('file-open', file);
-            }, 100);
-        });
-        
+        const completeRecurrenceButton = createCompleteRecurrenceButton(plugin, file, recurrence);
         buttonsContainer.appendChild(completeRecurrenceButton);
     }
     
     container.appendChild(buttonsContainer);
     
     // Right side: Due date or completion status
-    const infoContainer = document.createElement('div');
-    infoContainer.className = 'task-info';
-    infoContainer.style.paddingRight = '12px';
-    
-    // Get the latest metadata
-    const metadata = plugin.app.metadataCache.getFileCache(file);
-    if (metadata && metadata.frontmatter) {
-        if (isDone) {
-            // Show completion status
-            const statusElement = document.createElement('span');
-            statusElement.className = 'task-completion-status';
-            statusElement.textContent = `${taskTypeValue} Completed!`;
-            statusElement.style.color = 'var(--text-success)'; // Use success color for completed tasks
-            infoContainer.appendChild(statusElement);
-        } else {
-            // Show due date if available
-            const dueProperty = plugin.settings.dueProperty;
-            if (metadata.frontmatter[dueProperty]) {
-                const dueDate = metadata.frontmatter[dueProperty];
-                const dueDateElement = document.createElement('span');
-                dueDateElement.className = 'task-due-date';
-                dueDateElement.textContent = `${dueProperty}: ${dueDate}`;
-                infoContainer.appendChild(dueDateElement);
-            }
-        }
-    }
-    
+    const infoContainer = createTaskInfoDisplay(plugin, file, isDone);
     container.appendChild(infoContainer);
     
     return container;

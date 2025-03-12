@@ -1,5 +1,6 @@
 // recurrence-parser.ts
 import { moment } from "obsidian";
+import { addRecurrencePeriod, ensureFutureDate } from "./utils/recurrence-utils";
 
 export interface RecurrenceInfo {
     amount: number;
@@ -68,45 +69,12 @@ export function calculateNextDueDate(
         ? completionMoment 
         : currentDueMoment;
     
-    // Clone the moment to avoid modifying the original
-    let nextDueMoment = baseMoment.clone();
-    
     // Add the recurrence interval
-    switch (recurrence.unit) {
-        case 'day':
-            nextDueMoment.add(recurrence.amount, 'days');
-            break;
-        case 'week':
-            nextDueMoment.add(recurrence.amount, 'weeks');
-            break;
-        case 'month':
-            nextDueMoment.add(recurrence.amount, 'months');
-            break;
-        case 'year':
-            nextDueMoment.add(recurrence.amount, 'years');
-            break;
-    }
+    let nextDueMoment = addRecurrencePeriod(baseMoment, recurrence);
     
-    // For "after due" mode, if the next due date is in the past,
-    // keep adding recurrence intervals until it's in the future
+    // For "after due" mode, ensure the next due date is in the future
     if (recurrence.mode === 'after_due') {
-        const now = moment();
-        while (nextDueMoment.isBefore(now)) {
-            switch (recurrence.unit) {
-                case 'day':
-                    nextDueMoment.add(recurrence.amount, 'days');
-                    break;
-                case 'week':
-                    nextDueMoment.add(recurrence.amount, 'weeks');
-                    break;
-                case 'month':
-                    nextDueMoment.add(recurrence.amount, 'months');
-                    break;
-                case 'year':
-                    nextDueMoment.add(recurrence.amount, 'years');
-                    break;
-            }
-        }
+        nextDueMoment = ensureFutureDate(nextDueMoment, recurrence);
     }
     
     // Return the formatted date string
@@ -137,20 +105,7 @@ export function getMissedRecurrences(
     
     // Keep adding recurrence intervals until we reach the present
     while (true) {
-        switch (recurrence.unit) {
-            case 'day':
-                dateMoment.add(recurrence.amount, 'days');
-                break;
-            case 'week':
-                dateMoment.add(recurrence.amount, 'weeks');
-                break;
-            case 'month':
-                dateMoment.add(recurrence.amount, 'months');
-                break;
-            case 'year':
-                dateMoment.add(recurrence.amount, 'years');
-                break;
-        }
+        dateMoment = addRecurrencePeriod(dateMoment, recurrence);
         
         // If we've reached the present or future, stop
         if (dateMoment.isAfter(now)) {
