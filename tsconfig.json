@@ -16,9 +16,14 @@
       "ES5",
       "ES6",
       "ES7"
-    ]
+    ],
+    "outDir": "." // This ensures compiled files go to the root directory
   },
   "include": [
-    "**/*.ts"
+    "src/*.ts",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

@@ -1,10 +1,10 @@
 {
-	"id": "recurring-tasks",
-	"name": "Recurring Tasks",
-	"version": "1.0.0",
+	"id": "tasks-as-files",
+	"name": "Tasks as Files",
+	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "A plugin for managing recurring tasks with YAML frontmatter.",
-	"author": "Your Name",
-	"authorUrl": "https://github.com/yourusername",
+	"description": "A plugin for managing tasks with YAML frontmatter.",
+	"author": "SnHaku",
+	"authorUrl": "https://https://github.com/SnHaku",
 	"isDesktopOnly": false
   }
