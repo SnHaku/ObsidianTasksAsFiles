@@ -17,7 +17,7 @@ Intended to be used with the Templater plugin (or just Templates) for task creat
 
 ### Manual Installation
 
-1. Download the latest release from the [GitHub releases page](https://github.com/yourusername/obsidian-tasks-as-files/releases)
+1. Download the ZIP file from GitHub.
 2. Extract the ZIP file into your Obsidian vault's `.obsidian/plugins` folder
 3. Enable the plugin in Obsidian's Community Plugins settings
 
@@ -29,7 +29,7 @@ This plugin is not available on Obsidian Community Plugins yet.
 
 ### Creating a Task
 
-1. Create a new note with the following YAML frontmatter:
+Create a new note with the following minimum YAML frontmatter:
 
 ```yaml
 ---
@@ -38,14 +38,14 @@ Due: 2023-10-15
 Recur: 1w
 Done: false
 ---
-
+```
 
 
 The plugin will recognize this as a recurring task due on October 15, 2023, that repeats weekly.
 
 
 
-Recurrence Format
+### Recurrence Format
 
 
 
@@ -61,7 +61,7 @@ Longform: 1 day, 2 weeks, 3 months after completion
 
 
 
-Completing a Task
+### Completing a Task
 
 
 
@@ -81,7 +81,7 @@ Keep the task active for future recurrences
 
 
 
-Handling Missed Recurrences
+### Handling Missed Recurrences
 
 
 
@@ -97,7 +97,7 @@ The task will be updated accordingly
 
 
 
-Settings
+### Settings
 
 
 
@@ -115,7 +115,7 @@ CompleteTime Management: Options for updating completion timestamps
 
 
 
-Contributing
+### Contributing
 
 
 Warning for all who wander into the codebase: this project's codebase is nearly all written by LLM. Some design decisions may be suboptimal as a result. 
@@ -124,7 +124,7 @@ Contributions are welcome! Please feel free to submit a Pull Request or create a
 
 
 
-License
+### License
 
 
 
