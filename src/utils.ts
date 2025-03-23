@@ -32,18 +32,28 @@ export function addCompletionRecord(
     position: 'top' | 'bottom',
     dateTimeFormat: string,
     completedIndicator: string,
-    skippedIndicator: string
+    skippedIndicator: string,
+    originalDue: string
 ): string {
+    // Define column headers as constants
+    const COL_COMPLETED_TIME = "Completed";
+    const COL_DUE = "Due";
+    const COL_STATUS = "Status";
+    const COL_COUNT = "#";
+    
     const headingRegex = new RegExp(`## ${heading}`);
     
     // Format the datetime according to settings
     const formattedDatetime = moment(datetime).format(dateTimeFormat);
     
+    // Keep original due date as is (no formatting)
+    const dueDate = originalDue;
+    
     // Convert status to the configured indicator
     const statusIndicator = status === 'completed' ? completedIndicator : skippedIndicator;
     
-    // New row to add
-    const newRow = `| ${formattedDatetime} | ${statusIndicator} | 1 |`;
+    // New row to add with original due date
+    const newRow = `| ${formattedDatetime} | ${dueDate} | ${statusIndicator} | 1 |`;
     
     // Check if heading exists
     if (headingRegex.test(content)) {
@@ -52,7 +62,8 @@ export function addCompletionRecord(
         const afterHeadingPos = content.indexOf('\n', headingPos) + 1;
         
         // Check if there's already a table after the heading
-        const tableHeaderRegex = /\|\s*Date\s*\|\s*Status\s*\|\s*#\s*\|/;
+        // Use constants for the header pattern
+        const tableHeaderRegex = new RegExp(`\\|\\s*${COL_COMPLETED_TIME}\\s*\\|\\s*${COL_DUE}\\s*\\|\\s*${COL_STATUS}\\s*\\|\\s*${COL_COUNT}\\s*\\|`);
         const tableHeaderMatch = content.substring(afterHeadingPos).match(tableHeaderRegex);
         
         if (tableHeaderMatch) {
@@ -60,8 +71,8 @@ export function addCompletionRecord(
             const tableStartPos = afterHeadingPos + content.substring(afterHeadingPos).search(tableHeaderRegex);
             const headerLineEndPos = content.indexOf('\n', tableStartPos) + 1;
             
-            // Look for the divider row
-            const dividerRegex = /\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|/;
+            // Look for the divider row - updated for 4 columns
+            const dividerRegex = /\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|/;
             const dividerMatch = content.substring(headerLineEndPos).match(dividerRegex);
             
             if (dividerMatch) {
@@ -75,8 +86,8 @@ export function addCompletionRecord(
                     ? content.substring(dividerEndPos, tableEndPos) 
                     : content.substring(dividerEndPos);
                 
-                // Find the highest recurrence count
-                const rowRegex = /\|\s*.*?\s*\|\s*.*?\s*\|\s*(\d+)\s*\|/g;
+                // Find the highest recurrence count - updated regex for 4 columns
+                const rowRegex = /\|\s*.*?\s*\|\s*.*?\s*\|\s*.*?\s*\|\s*(\d+)\s*\|/g;
                 let match;
                 let highestCount = 0;
                 
@@ -88,16 +99,16 @@ export function addCompletionRecord(
                 }
                 
                 // Update the row with the incremented count
-                const updatedRow = `| ${formattedDatetime} | ${statusIndicator} | ${highestCount + 1} |`;
+                const updatedRow = `| ${formattedDatetime} | ${dueDate} | ${statusIndicator} | ${highestCount + 1} |`;
                 
-                // Insert the new row right after the divider (without adding an extra newline)
+                // Insert the new row right after the divider
                 return content.substring(0, dividerEndPos) + updatedRow + '\n' + content.substring(dividerEndPos);
             } else {
                 // No divider found - the table might be broken
-                // Let's rebuild the table properly
-                const newTable = `| Date | Status | # |
-| ---- | ------ | - |
-| ${formattedDatetime} | ${statusIndicator} | 1 |`;
+                // Let's rebuild the table properly with the new column
+                const newTable = `| ${COL_COMPLETED_TIME} | ${COL_DUE} | ${COL_STATUS} | ${COL_COUNT} |
+| -------------- | --- | ------ | - |
+| ${formattedDatetime} | ${dueDate} | ${statusIndicator} | 1 |`;
                 
                 // Replace everything from the header line to the next blank line
                 const tableEndPos = content.indexOf('\n\n', tableStartPos);
@@ -115,10 +126,10 @@ export function addCompletionRecord(
                 }
             }
         } else {
-            // No table exists yet - create one
-            const newTable = `| Date | Status | # |
-| ---- | ------ | - |
-| ${formattedDatetime} | ${statusIndicator} | 1 |`;
+            // No table exists yet - create one with the new column
+            const newTable = `| ${COL_COMPLETED_TIME} | ${COL_DUE} | ${COL_STATUS} | ${COL_COUNT} |
+| -------------- | --- | ------ | - |
+| ${formattedDatetime} | ${dueDate} | ${statusIndicator} | 1 |`;
             
             // Add the table after the heading
             return [
@@ -128,11 +139,11 @@ export function addCompletionRecord(
             ].join('\n');
         }
     } else {
-        // No heading exists - create it with a new table
+        // No heading exists - create it with a new table including the new column
         const newContent = `## ${heading}
-| Date | Status | # |
-| ---- | ------ | - |
-| ${formattedDatetime} | ${statusIndicator} | 1 |`;
+| ${COL_COMPLETED_TIME} | ${COL_DUE} | ${COL_STATUS} | ${COL_COUNT} |
+| -------------- | --- | ------ | - |
+| ${formattedDatetime} | ${dueDate} | ${statusIndicator} | 1 |`;
         
         if (position === 'top') {
             // Add at the top after frontmatter
@@ -168,4 +179,36 @@ export function isNoteATask(frontmatter: any, taskTypeProperty: string, taskType
     if (Array.isArray(propertyValue) && propertyValue.includes(taskTypeValue)) return true;
     
     return false;
+}
+
+/**
+ * Determines if a date string contains a time component
+ * 
+ * This function checks various indicators that a time was explicitly included
+ * in the date string, rather than just being a date-only value.
+ * 
+ * @param dateString - The date string to check
+ * @returns True if the date string contains a time component
+ */
+export function hasTimeComponent(dateString: string): boolean {
+    // Quick check for common time indicators
+    if (dateString.includes('T') || // ISO format separator
+        dateString.includes(':') || // Time separator
+        /\d{1,2}[:.]\d{2}/.test(dateString)) { // Time pattern
+        return true;
+    }
+    
+    // Parse with moment and check if any time components are non-zero
+    // This catches cases where the time is explicitly in the string
+    // but our simple checks above didn't catch it
+    const parsedDate = moment(dateString);
+    if (!parsedDate.isValid()) {
+        return false; // Invalid date
+    }
+    
+    // Check if any time components are non-zero
+    return parsedDate.hour() !== 0 || 
+           parsedDate.minute() !== 0 || 
+           parsedDate.second() !== 0 ||
+           parsedDate.millisecond() !== 0;
 }
