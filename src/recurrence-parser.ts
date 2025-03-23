@@ -1,5 +1,6 @@
 // recurrence-parser.ts
 import { moment } from "obsidian";
+import { hasTimeComponent } from "./utils"; // Import the utility function
 
 export interface RecurrenceInfo {
     amount: number;
@@ -63,8 +64,8 @@ export function calculateNextDueDate(
     const currentDueMoment = moment(currentDue);
     const completionMoment = moment(completionTime);
     
-    // Check if the original due date had a time component
-    const hasTimeComponent = /T\d{2}:\d{2}/.test(currentDue);
+    // Use our utility function to check for time component
+    const hasTime = hasTimeComponent(currentDue);
     
     // Determine the base date to start from
     let baseMoment;
@@ -72,7 +73,7 @@ export function calculateNextDueDate(
         // For "after completion" mode, use completion date but preserve original time
         baseMoment = completionMoment.clone();
         
-        if (hasTimeComponent) {
+        if (hasTime) {
             // Preserve the original time from currentDue
             baseMoment.hour(currentDueMoment.hour());
             baseMoment.minute(currentDueMoment.minute());
@@ -123,7 +124,7 @@ export function calculateNextDueDate(
     }
     
     // Return the formatted date string, preserving the original format
-    if (hasTimeComponent) {
+    if (hasTime) {
         return baseMoment.format(); // Full ISO format with time
     } else {
         return baseMoment.format('YYYY-MM-DD'); // Date only
@@ -141,8 +142,8 @@ export function getMissedRecurrences(
     const currentDueMoment = moment(currentDue);
     const now = moment();
     
-    // Check if the original due date had a time component
-    const hasTimeComponent = /T\d{2}:\d{2}/.test(currentDue);
+    // Use our utility function to check for time component
+    const hasTime = hasTimeComponent(currentDue);
     
     // If the due date is in the future, there are no missed recurrences
     if (currentDueMoment.isAfter(now)) {
@@ -178,7 +179,7 @@ export function getMissedRecurrences(
         }
         
         // Format the date consistently with the original due date
-        if (hasTimeComponent) {
+        if (hasTime) {
             missedDates.push(dateMoment.format()); // Full ISO format with time
         } else {
             missedDates.push(dateMoment.format('YYYY-MM-DD')); // Date only

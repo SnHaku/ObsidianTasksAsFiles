@@ -180,3 +180,35 @@ export function isNoteATask(frontmatter: any, taskTypeProperty: string, taskType
     
     return false;
 }
+
+/**
+ * Determines if a date string contains a time component
+ * 
+ * This function checks various indicators that a time was explicitly included
+ * in the date string, rather than just being a date-only value.
+ * 
+ * @param dateString - The date string to check
+ * @returns True if the date string contains a time component
+ */
+export function hasTimeComponent(dateString: string): boolean {
+    // Quick check for common time indicators
+    if (dateString.includes('T') || // ISO format separator
+        dateString.includes(':') || // Time separator
+        /\d{1,2}[:.]\d{2}/.test(dateString)) { // Time pattern
+        return true;
+    }
+    
+    // Parse with moment and check if any time components are non-zero
+    // This catches cases where the time is explicitly in the string
+    // but our simple checks above didn't catch it
+    const parsedDate = moment(dateString);
+    if (!parsedDate.isValid()) {
+        return false; // Invalid date
+    }
+    
+    // Check if any time components are non-zero
+    return parsedDate.hour() !== 0 || 
+           parsedDate.minute() !== 0 || 
+           parsedDate.second() !== 0 ||
+           parsedDate.millisecond() !== 0;
+}
