@@ -35,13 +35,13 @@ export const DEFAULT_SETTINGS: RecurringTasksSettings = {
     completionHeading: 'Completions',
     completionPosition: 'bottom',
     dateTimeFormat: 'YYYY-MM-DDTHH:mm:ssZ',
-    completedIndicator: '✅',  // Default completed indicator
-    skippedIndicator: '⏭️',   // Default skipped indicator
+    completedIndicator: 'Done',  // Default completed indicator
+    skippedIndicator: 'Skipped',   // Default skipped indicator
     
     // CompleteTime management settings
     completeTimeProperty: 'CompleteTime',
-    updateCompleteTimeOnSave: true,
-    updateCompleteTimeOnBlur: false
+    updateCompleteTimeOnSave: false,
+    updateCompleteTimeOnBlur: true
 };
 
 export class RecurringTasksSettingTab extends PluginSettingTab {
