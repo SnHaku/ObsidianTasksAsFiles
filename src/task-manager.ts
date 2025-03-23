@@ -107,15 +107,17 @@ export class TaskManager {
         let updatedContent = content;
         
         for (const missedDate of missedDates) {
+            // For each missed date, we use that specific date as the "original due"
             updatedContent = addCompletionRecord(
                 updatedContent, 
-                missedDate, 
+                now,  // Completion time is now
                 status, 
                 this.settings.completionHeading, 
                 this.settings.completionPosition,
                 this.settings.dateTimeFormat,
-                this.settings.completedIndicator,  // Add completed indicator
-                this.settings.skippedIndicator     // Add skipped indicator
+                this.settings.completedIndicator,
+                this.settings.skippedIndicator,
+                missedDate  // Each missed date is its own "original due"
             );
         }
         
@@ -144,7 +146,7 @@ export class TaskManager {
         // Get the current content to add completion record
         const content = await this.app.vault.read(file);
         
-        // Add a completion record
+        // Add a completion record - now passing the original due date
         const updatedContent = addCompletionRecord(
             content, 
             completionTime, 
@@ -152,8 +154,9 @@ export class TaskManager {
             this.settings.completionHeading, 
             this.settings.completionPosition,
             this.settings.dateTimeFormat,
-            this.settings.completedIndicator,  // Add completed indicator
-            this.settings.skippedIndicator     // Add skipped indicator
+            this.settings.completedIndicator,
+            this.settings.skippedIndicator,
+            currentDue  // Pass the original due date
         );
         
         // Save the updated content with completion record
