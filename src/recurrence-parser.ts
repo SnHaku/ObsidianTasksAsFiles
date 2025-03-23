@@ -141,6 +141,9 @@ export function getMissedRecurrences(
     const currentDueMoment = moment(currentDue);
     const now = moment();
     
+    // Check if the original due date had a time component
+    const hasTimeComponent = /T\d{2}:\d{2}/.test(currentDue);
+    
     // If the due date is in the future, there are no missed recurrences
     if (currentDueMoment.isAfter(now)) {
         return [];
@@ -149,8 +152,8 @@ export function getMissedRecurrences(
     const missedDates: string[] = [];
     let dateMoment = currentDueMoment.clone();
     
-    // Add the current due date if it's in the past
-    missedDates.push(dateMoment.format());
+    // Add the current due date if it's in the past (preserve original format)
+    missedDates.push(currentDue);
     
     // Keep adding recurrence intervals until we reach the present
     while (true) {
@@ -174,7 +177,12 @@ export function getMissedRecurrences(
             break;
         }
         
-        missedDates.push(dateMoment.format());
+        // Format the date consistently with the original due date
+        if (hasTimeComponent) {
+            missedDates.push(dateMoment.format()); // Full ISO format with time
+        } else {
+            missedDates.push(dateMoment.format('YYYY-MM-DD')); // Date only
+        }
     }
     
     return missedDates;
