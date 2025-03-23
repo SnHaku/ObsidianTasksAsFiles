@@ -63,27 +63,40 @@ export function calculateNextDueDate(
     const currentDueMoment = moment(currentDue);
     const completionMoment = moment(completionTime);
     
-    // Determine the base date to start from
-    const baseMoment = recurrence.mode === 'after_completion' 
-        ? completionMoment 
-        : currentDueMoment;
+    // Check if the original due date had a time component
+    const hasTimeComponent = /T\d{2}:\d{2}/.test(currentDue);
     
-    // Clone the moment to avoid modifying the original
-    let nextDueMoment = baseMoment.clone();
+    // Determine the base date to start from
+    let baseMoment;
+    if (recurrence.mode === 'after_completion') {
+        // For "after completion" mode, use completion date but preserve original time
+        baseMoment = completionMoment.clone();
+        
+        if (hasTimeComponent) {
+            // Preserve the original time from currentDue
+            baseMoment.hour(currentDueMoment.hour());
+            baseMoment.minute(currentDueMoment.minute());
+            baseMoment.second(currentDueMoment.second());
+            baseMoment.millisecond(currentDueMoment.millisecond());
+        }
+    } else {
+        // For "after due" mode, use the current due date
+        baseMoment = currentDueMoment.clone();
+    }
     
     // Add the recurrence interval
     switch (recurrence.unit) {
         case 'day':
-            nextDueMoment.add(recurrence.amount, 'days');
+            baseMoment.add(recurrence.amount, 'days');
             break;
         case 'week':
-            nextDueMoment.add(recurrence.amount, 'weeks');
+            baseMoment.add(recurrence.amount, 'weeks');
             break;
         case 'month':
-            nextDueMoment.add(recurrence.amount, 'months');
+            baseMoment.add(recurrence.amount, 'months');
             break;
         case 'year':
-            nextDueMoment.add(recurrence.amount, 'years');
+            baseMoment.add(recurrence.amount, 'years');
             break;
     }
     
@@ -91,26 +104,30 @@ export function calculateNextDueDate(
     // keep adding recurrence intervals until it's in the future
     if (recurrence.mode === 'after_due') {
         const now = moment();
-        while (nextDueMoment.isBefore(now)) {
+        while (baseMoment.isBefore(now)) {
             switch (recurrence.unit) {
                 case 'day':
-                    nextDueMoment.add(recurrence.amount, 'days');
+                    baseMoment.add(recurrence.amount, 'days');
                     break;
                 case 'week':
-                    nextDueMoment.add(recurrence.amount, 'weeks');
+                    baseMoment.add(recurrence.amount, 'weeks');
                     break;
                 case 'month':
-                    nextDueMoment.add(recurrence.amount, 'months');
+                    baseMoment.add(recurrence.amount, 'months');
                     break;
                 case 'year':
-                    nextDueMoment.add(recurrence.amount, 'years');
+                    baseMoment.add(recurrence.amount, 'years');
                     break;
             }
         }
     }
     
-    // Return the formatted date string
-    return nextDueMoment.format();
+    // Return the formatted date string, preserving the original format
+    if (hasTimeComponent) {
+        return baseMoment.format(); // Full ISO format with time
+    } else {
+        return baseMoment.format('YYYY-MM-DD'); // Date only
+    }
 }
 
 export function getMissedRecurrences(
